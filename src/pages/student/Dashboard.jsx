@@ -3,6 +3,13 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
 
+const MODES = [
+  { key: 'flashcards', label: 'Flashcards', icon: 'FC', path: '/student/flashcards/', color: 'bg-orange-500 hover:bg-orange-600' },
+  { key: 'quiz',       label: 'MCQ Quiz',   icon: 'Q',  path: '/student/quiz/',       color: 'bg-green-500 hover:bg-green-600' },
+  { key: 'typing',     label: 'Typing',     icon: 'T',  path: '/student/typing/',     color: 'bg-blue-500 hover:bg-blue-600' },
+  { key: 'matching',   label: 'Matching',   icon: 'M',  path: '/student/matching/',   color: 'bg-purple-500 hover:bg-purple-600' },
+]
+
 export default function StudentDashboard() {
   const { user, profile } = useAuth()
   const navigate = useNavigate()
@@ -34,20 +41,18 @@ export default function StudentDashboard() {
 
   const firstName = profile?.full_name?.split(' ')[0] ?? 'there'
 
-  // Best score per list
   const bestByList = {}
   results.forEach(r => {
     const pct = Math.round((r.score / r.total) * 100)
     if (!bestByList[r.list_id] || pct > bestByList[r.list_id]) bestByList[r.list_id] = pct
   })
 
+  const modeEmojis = { flashcard: '🃏', mcq: '✏️', typing: '⌨️', matching: '🔗' }
+
   return (
     <div className="max-w-lg mx-auto px-4 py-6">
-      {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-stone-900">
-          Hi, {firstName}! 👋
-        </h1>
+        <h1 className="text-2xl font-bold text-stone-900">Hi, {firstName}! 👋</h1>
         <p className="text-stone-400 text-sm mt-1">
           {lists.length} list{lists.length !== 1 ? 's' : ''} assigned · Ready to practice?
         </p>
@@ -57,7 +62,7 @@ export default function StudentDashboard() {
         <div className="text-center py-16 text-stone-400">
           <div className="text-6xl mb-4">📚</div>
           <p className="font-semibold text-stone-600">No lists assigned yet</p>
-          <p className="text-sm mt-2">Your teacher will assign vocabulary lists to you soon.</p>
+          <p className="text-sm mt-2">Your teacher will assign vocabulary lists soon.</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -68,35 +73,31 @@ export default function StudentDashboard() {
             return (
               <div key={list.id} className="bg-white rounded-2xl shadow-sm border border-orange-100 overflow-hidden">
                 <div className="p-4">
-                  <div className="flex items-start justify-between mb-2">
+                  <div className="flex items-start justify-between mb-3">
                     <div>
                       <h3 className="font-bold text-stone-900">{list.title}</h3>
                       <p className="text-stone-400 text-sm">{wordCount} words</p>
                     </div>
                     {best !== undefined && (
-                      <span className={`text-xs font-bold px-2 py-1 rounded-full ${
+                      <span className={'text-xs font-bold px-2 py-1 rounded-full ' + (
                         best >= 80 ? 'bg-green-100 text-green-700'
                         : best >= 60 ? 'bg-orange-100 text-orange-700'
                         : 'bg-red-100 text-red-600'
-                      }`}>
+                      )}>
                         Best: {best}%
                       </span>
                     )}
                   </div>
-
-                  <div className="grid grid-cols-2 gap-2 mt-3">
-                    <button
-                      onClick={() => navigate(`/student/flashcards/${list.id}`)}
-                      className="flex items-center justify-center gap-2 bg-orange-500 text-white font-bold py-2.5 rounded-xl hover:bg-orange-600 transition-colors text-sm shadow-sm"
-                    >
-                      🃏 Flashcards
-                    </button>
-                    <button
-                      onClick={() => navigate(`/student/quiz/${list.id}`)}
-                      className="flex items-center justify-center gap-2 bg-green-500 text-white font-bold py-2.5 rounded-xl hover:bg-green-600 transition-colors text-sm shadow-sm"
-                    >
-                      ✏️ Quiz
-                    </button>
+                  <div className="grid grid-cols-2 gap-2">
+                    {MODES.map(mode => (
+                      <button
+                        key={mode.key}
+                        onClick={() => navigate(mode.path + list.id)}
+                        className={'flex items-center justify-center gap-1.5 text-white font-bold py-2.5 rounded-xl transition-colors text-sm shadow-sm ' + mode.color}
+                      >
+                        {mode.label}
+                      </button>
+                    ))}
                   </div>
                 </div>
               </div>
@@ -114,12 +115,12 @@ export default function StudentDashboard() {
               const listName = lists.find(l => l.id === r.list_id)?.title ?? 'Unknown'
               return (
                 <div key={i} className="bg-white border border-orange-100 rounded-xl px-4 py-3 flex items-center gap-3">
-                  <span className="text-lg">{r.mode === 'flashcard' ? '🃏' : '✏️'}</span>
+                  <span className="text-lg">{modeEmojis[r.mode] ?? '📝'}</span>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-stone-800 truncate">{listName}</p>
-                    <p className="text-xs text-stone-400">{r.score}/{r.total} correct</p>
+                    <p className="text-xs text-stone-400">{r.mode} · {r.score}/{r.total} correct</p>
                   </div>
-                  <span className={`text-sm font-bold ${pct >= 80 ? 'text-green-600' : pct >= 60 ? 'text-orange-500' : 'text-red-500'}`}>
+                  <span className={'text-sm font-bold ' + (pct >= 80 ? 'text-green-600' : pct >= 60 ? 'text-orange-500' : 'text-red-500')}>
                     {pct}%
                   </span>
                 </div>
