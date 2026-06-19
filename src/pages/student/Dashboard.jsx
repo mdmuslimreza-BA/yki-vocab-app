@@ -22,7 +22,7 @@ export default function StudentDashboard() {
       const [{ data: assigned }, { data: scores }] = await Promise.all([
         supabase
           .from('assignments')
-          .select('vocab_list_id, vocab_lists(id, title, vocab_words(count))')
+          .select('list_id, vocab_lists(id, title, vocab_words(count))')
           .eq('student_id', user.id),
         supabase
           .from('quiz_results')

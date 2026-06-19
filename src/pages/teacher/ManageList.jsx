@@ -26,7 +26,7 @@ export default function ManageList() {
         supabase.from('vocab_lists').select('title').eq('id', listId).single(),
         supabase.from('vocab_words').select('*').eq('list_id', listId).order('position'),
         supabase.from('profiles').select('id, full_name, email').eq('teacher_id', user.id),
-        supabase.from('assignments').select('student_id').eq('vocab_list_id', listId)
+        supabase.from('assignments').select('student_id').eq('list_id', listId)
       ])
       setList(listData)
       setWords(wordsData ?? [])
@@ -40,11 +40,11 @@ export default function ManageList() {
   async function toggleAssign(studentId) {
     if (assigned.has(studentId)) {
       await supabase.from('assignments')
-        .delete().eq('vocab_list_id', listId).eq('student_id', studentId)
+        .delete().eq('list_id', listId).eq('student_id', studentId)
       setAssigned(s => { const n = new Set(s); n.delete(studentId); return n })
     } else {
       await supabase.from('assignments')
-        .insert({ vocab_list_id: listId, student_id: studentId })
+        .insert({ list_id: listId, student_id: studentId })
       setAssigned(s => new Set([...s, studentId]))
     }
   }
