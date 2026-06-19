@@ -5,8 +5,8 @@ import { useAuth } from '../contexts/AuthContext'
 export default function Login() {
   const { signIn } = useAuth()
   const navigate = useNavigate()
-  const [form, setForm]   = useState({ email: '', password: '' })
-  const [error, setError] = useState('')
+  const [form, setForm]       = useState({ email: '', password: '' })
+  const [error, setError]     = useState('')
   const [loading, setLoading] = useState(false)
 
   async function handleSubmit(e) {
@@ -24,59 +24,52 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 to-blue-700 flex items-center justify-center px-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-8">
+    <div className="min-h-screen bg-gradient-to-br from-orange-500 via-orange-400 to-green-500 flex items-center justify-center px-4">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-8">
         <div className="text-center mb-8">
-          <div className="text-5xl mb-2">🇫🇮</div>
-          <h1 className="text-2xl font-bold text-gray-900">YKI Vocab</h1>
-          <p className="text-gray-500 text-sm mt-1">Finnish–English Practice</p>
+          <div className="w-16 h-16 bg-orange-100 rounded-2xl flex items-center justify-center mx-auto mb-3 text-3xl shadow-sm">
+            🎯
+          </div>
+          <h1 className="text-2xl font-bold text-stone-900">YKI Ready</h1>
+          <p className="text-stone-400 text-sm mt-1">Finnish–English Vocabulary Practice</p>
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 mb-4 text-sm">
+          <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 mb-4 text-sm">
             {error}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <label className="block text-sm font-semibold text-stone-600 mb-1">Email</label>
             <input
               type="email"
               required
               value={form.email}
               onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border-2 border-orange-100 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-orange-400 bg-orange-50 transition-colors"
               placeholder="your@email.com"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+            <label className="block text-sm font-semibold text-stone-600 mb-1">Password</label>
             <input
               type="password"
               required
               value={form.password}
               onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border-2 border-orange-100 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-orange-400 bg-orange-50 transition-colors"
               placeholder="••••••••"
             />
           </div>
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-900 hover:bg-blue-800 text-white font-semibold py-2.5 rounded-lg transition-colors disabled:opacity-60"
+            className="w-full bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white font-bold py-3 rounded-xl transition-all disabled:opacity-60 shadow-md shadow-orange-200 mt-2"
           >
-            {loading ? 'Signing in...' : 'Sign In'}
+            {loading ? 'Signing in...' : 'Sign In →'}
           </button>
         </form>
 
-        <p className="text-center text-sm text-gray-500 mt-6">
-          No account?{' '}
-          <Link to="/register" className="text-blue-700 font-medium hover:underline">
-            Register here
-          </Link>
-        </p>
-      </div>
-    </div>
-  )
-}
+     

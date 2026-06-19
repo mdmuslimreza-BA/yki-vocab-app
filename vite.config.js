@@ -8,10 +8,10 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       manifest: {
-        name: 'YKI Vocab',
-        short_name: 'YKI Vocab',
+        name: 'YKI Ready',
+        short_name: 'YKI Ready',
         description: 'Finnish-English vocabulary practice for YKI exam',
-        theme_color: '#003580',
+        theme_color: '#ea580c',
         background_color: '#ffffff',
         display: 'standalone',
         start_url: '/',
