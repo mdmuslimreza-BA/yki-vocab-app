@@ -4,31 +4,28 @@ import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
 
 export default function Leaderboard() {
-  const { user, profile } = useAuth()
+  const { user } = useAuth()
   const navigate = useNavigate()
   const [students, setStudents] = useState([])
   const [loading, setLoading]   = useState(true)
 
   useEffect(() => {
     async function load() {
-      // Get all students in same class (same teacher)
-      const { data } = await supabase
-        .from('profiles')
-        .select('id, full_name, streak')
-        .eq('teacher_id', profile?.teacher_id)
-        .eq('role', 'student')
-        .order('streak', { ascending: false })
+      // Use RPC to safely fetch classmates without recursive RLS
+      const { data: classmates } = await supabase.rpc('get_classmates')
 
-      if (!data) { setLoading(false); return }
+      if (!classmates || classmates.length === 0) {
+        setLoading(false); return
+      }
 
-      // Fetch session counts for each student
-      const ids = data.map(s => s.id)
+      // Fetch session counts
+      const ids = classmates.map(s => s.id)
       const { data: results } = await supabase
         .from('quiz_results')
         .select('student_id, score, total')
         .in('student_id', ids)
 
-      const enriched = data.map(s => {
+      const enriched = classmates.map(s => {
         const myResults = (results ?? []).filter(r => r.student_id === s.id)
         const sessions  = myResults.length
         const avgScore  = sessions > 0
@@ -41,7 +38,7 @@ export default function Leaderboard() {
       setLoading(false)
     }
     load()
-  }, [profile?.teacher_id])
+  }, [])
 
   const medals = ['🥇', '🥈', '🥉']
 

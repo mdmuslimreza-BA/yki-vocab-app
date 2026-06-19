@@ -9,6 +9,7 @@ import TeacherDash     from './pages/teacher/Dashboard'
 import UploadVocab     from './pages/teacher/UploadVocab'
 import ManageList      from './pages/teacher/ManageList'
 import TeacherProgress from './pages/teacher/Progress'
+import StudentDetail   from './pages/teacher/StudentDetail'
 import StudentDash     from './pages/student/Dashboard'
 import Flashcards      from './pages/student/Flashcards'
 import MCQQuiz         from './pages/student/MCQQuiz'
@@ -38,6 +39,9 @@ function AppRoutes() {
         } />
         <Route path="/teacher/progress" element={
           <ProtectedRoute role="teacher"><TeacherProgress /></ProtectedRoute>
+        } />
+        <Route path="/teacher/student/:studentId" element={
+          <ProtectedRoute role="teacher"><StudentDetail /></ProtectedRoute>
         } />
 
         <Route path="/student" element={

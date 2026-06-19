@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
 import { updateStreak } from '../../lib/streak'
+import { updateMastery } from '../../lib/mastery'
 
 function shuffle(arr) { return [...arr].sort(() => Math.random() - 0.5) }
 
@@ -73,6 +74,7 @@ export default function MatchingGame() {
       setMatched(newMatched)
       setSelected(null)
       setScore(s => s + 1)
+      updateMastery(user.id, id, listId, true)
 
       // Round complete
       if (newMatched.size === round.length) {
@@ -91,6 +93,7 @@ export default function MatchingGame() {
       }
     } else {
       // Wrong match
+      updateMastery(user.id, selected.id, listId, false)
       setWrong({ a: { id: selected.id, side: selected.side }, b: { id, side } })
       setTimeout(() => { setWrong(null); setSelected(null) }, 800)
     }

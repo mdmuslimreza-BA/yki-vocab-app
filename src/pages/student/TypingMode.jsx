@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
 import { updateStreak } from '../../lib/streak'
+import { updateMastery } from '../../lib/mastery'
 
 function shuffle(arr) { return [...arr].sort(() => Math.random() - 0.5) }
 
@@ -52,6 +53,9 @@ export default function TypingMode() {
     const newScore = correct ? score + 1 : score
     const newMissed = correct ? missed : [...missed, word]
 
+    // Update per-word mastery
+    updateMastery(user.id, word.id, listId, correct)
+
     setTimeout(async () => {
       if (index + 1 >= words.length) {
         await supabase.from('quiz_results').insert({
@@ -72,6 +76,7 @@ export default function TypingMode() {
     if (feedback) return
     const word = words[index]
     setFeedback('wrong')
+    updateMastery(user.id, word.id, listId, false)
     const newMissed = [...missed, word]
     setTimeout(async () => {
       if (index + 1 >= words.length) {

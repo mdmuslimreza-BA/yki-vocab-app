@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
+import { masteryColor, masteryLabel } from '../../lib/mastery'
 
 export default function ManageList() {
   const { listId } = useParams()
@@ -12,8 +13,13 @@ export default function ManageList() {
   const [words, setWords]         = useState([])
   const [students, setStudents]   = useState([])
   const [assigned, setAssigned]   = useState(new Set())
+  const [mastery, setMastery]     = useState({}) // wordId -> avg level
   const [tab, setTab]             = useState('words')
   const [loading, setLoading]     = useState(true)
+  const [editingId, setEditingId] = useState(null)
+  const [editForm, setEditForm]   = useState({ finnish: '', english: '' })
+  const [addForm, setAddForm]     = useState({ finnish: '', english: '' })
+  const [saving, setSaving]       = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -21,17 +27,31 @@ export default function ManageList() {
         { data: listData },
         { data: wordsData },
         { data: studentsData },
-        { data: assignData }
+        { data: assignData },
+        { data: masteryData }
       ] = await Promise.all([
         supabase.from('vocab_lists').select('title').eq('id', listId).single(),
         supabase.from('vocab_words').select('*').eq('list_id', listId).order('position'),
         supabase.from('profiles').select('id, full_name, email').eq('teacher_id', user.id),
-        supabase.from('assignments').select('student_id').eq('list_id', listId)
+        supabase.from('assignments').select('student_id').eq('list_id', listId),
+        supabase.from('word_mastery').select('word_id, mastery_level').eq('list_id', listId)
       ])
       setList(listData)
       setWords(wordsData ?? [])
       setStudents(studentsData ?? [])
       setAssigned(new Set((assignData ?? []).map(a => a.student_id)))
+
+      // Average mastery per word across all students
+      const avgMap = {}
+      ;(masteryData ?? []).forEach(m => {
+        if (!avgMap[m.word_id]) avgMap[m.word_id] = []
+        avgMap[m.word_id].push(m.mastery_level)
+      })
+      const result = {}
+      Object.entries(avgMap).forEach(([wid, levels]) => {
+        result[wid] = Math.round(levels.reduce((a, b) => a + b, 0) / levels.length)
+      })
+      setMastery(result)
       setLoading(false)
     }
     load()
@@ -52,6 +72,38 @@ export default function ManageList() {
   async function deleteWord(wordId) {
     await supabase.from('vocab_words').delete().eq('id', wordId)
     setWords(w => w.filter(x => x.id !== wordId))
+  }
+
+  function startEdit(word) {
+    setEditingId(word.id)
+    setEditForm({ finnish: word.finnish, english: word.english })
+  }
+
+  async function saveEdit(wordId) {
+    if (!editForm.finnish.trim() || !editForm.english.trim()) return
+    setSaving(true)
+    await supabase.from('vocab_words')
+      .update({ finnish: editForm.finnish.trim(), english: editForm.english.trim() })
+      .eq('id', wordId)
+    setWords(ws => ws.map(w => w.id === wordId
+      ? { ...w, finnish: editForm.finnish.trim(), english: editForm.english.trim() }
+      : w
+    ))
+    setEditingId(null)
+    setSaving(false)
+  }
+
+  async function addWord(e) {
+    e.preventDefault()
+    if (!addForm.finnish.trim() || !addForm.english.trim()) return
+    setSaving(true)
+    const nextPos = words.length + 1
+    const { data } = await supabase.from('vocab_words')
+      .insert({ list_id: listId, finnish: addForm.finnish.trim(), english: addForm.english.trim(), position: nextPos })
+      .select().single()
+    if (data) setWords(ws => [...ws, data])
+    setAddForm({ finnish: '', english: '' })
+    setSaving(false)
   }
 
   if (loading) return <Spinner />
@@ -84,25 +136,113 @@ export default function ManageList() {
       {tab === 'words' && (
         <div>
           {words.length === 0 ? (
-            <div className="text-center py-12 text-stone-400">
+            <div className="text-center py-8 text-stone-400">
               <div className="text-4xl mb-2">📭</div>
-              <p>No words in this list</p>
+              <p>No words yet — add one below</p>
             </div>
           ) : (
-            <div className="space-y-2">
-              {words.map((w, i) => (
-                <div key={w.id} className="bg-white border border-orange-100 rounded-xl px-4 py-3 flex items-center gap-3">
-                  <span className="text-xs text-stone-400 w-6 font-mono">{i + 1}</span>
-                  <div className="flex-1">
-                    <span className="font-semibold text-stone-800 text-sm">{w.finnish}</span>
-                    <span className="text-stone-400 text-xs mx-2">→</span>
-                    <span className="text-green-700 text-sm">{w.english}</span>
+            <div className="space-y-2 mb-6">
+              {words.map((w, i) => {
+                const level = mastery[w.id] ?? 0
+                const isEditing = editingId === w.id
+                return (
+                  <div key={w.id} className="bg-white border border-orange-100 rounded-xl px-4 py-3">
+                    {isEditing ? (
+                      <div className="space-y-2">
+                        <div className="flex gap-2">
+                          <input
+                            value={editForm.finnish}
+                            onChange={e => setEditForm(f => ({ ...f, finnish: e.target.value }))}
+                            placeholder="Finnish"
+                            className="flex-1 border border-orange-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-orange-400 bg-orange-50"
+                          />
+                          <input
+                            value={editForm.english}
+                            onChange={e => setEditForm(f => ({ ...f, english: e.target.value }))}
+                            placeholder="English"
+                            className="flex-1 border border-orange-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-orange-400 bg-orange-50"
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => saveEdit(w.id)}
+                            disabled={saving}
+                            className="flex-1 bg-orange-500 text-white text-xs font-bold py-1.5 rounded-lg hover:bg-orange-600 disabled:opacity-60"
+                          >
+                            {saving ? '...' : 'Save'}
+                          </button>
+                          <button
+                            onClick={() => setEditingId(null)}
+                            className="flex-1 bg-stone-100 text-stone-600 text-xs font-bold py-1.5 rounded-lg hover:bg-stone-200"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs text-stone-400 w-6 font-mono shrink-0">{i + 1}</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-semibold text-stone-800 text-sm">{w.finnish}</span>
+                            <span className="text-stone-300 text-xs">→</span>
+                            <span className="text-green-700 text-sm">{w.english}</span>
+                          </div>
+                          {level > 0 && (
+                            <p className={`text-xs mt-0.5 ${masteryColor(level)}`}>
+                              {'★'.repeat(level)}{'☆'.repeat(5 - level)} {masteryLabel(level)}
+                            </p>
+                          )}
+                        </div>
+                        <button
+                          onClick={() => startEdit(w)}
+                          className="text-xs text-orange-400 hover:text-orange-600 px-2 shrink-0"
+                        >
+                          ✏️
+                        </button>
+                        <button
+                          onClick={() => deleteWord(w.id)}
+                          className="text-red-300 hover:text-red-500 text-sm shrink-0"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    )}
                   </div>
-                  <button onClick={() => deleteWord(w.id)} className="text-red-300 hover:text-red-500 text-sm ml-1">✕</button>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
+
+          {/* Add word form */}
+          <div className="bg-orange-50 border border-orange-200 rounded-2xl p-4">
+            <p className="text-sm font-bold text-stone-700 mb-3">+ Add New Word</p>
+            <form onSubmit={addWord} className="space-y-2">
+              <div className="flex gap-2">
+                <input
+                  value={addForm.finnish}
+                  onChange={e => setAddForm(f => ({ ...f, finnish: e.target.value }))}
+                  placeholder="Finnish word"
+                  required
+                  className="flex-1 border border-orange-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-orange-400 bg-white"
+                />
+                <input
+                  value={addForm.english}
+                  onChange={e => setAddForm(f => ({ ...f, english: e.target.value }))}
+                  placeholder="English translation"
+                  required
+                  className="flex-1 border border-orange-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-orange-400 bg-white"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={saving}
+                className="w-full bg-orange-500 text-white text-sm font-bold py-2.5 rounded-xl hover:bg-orange-600 disabled:opacity-60 transition-colors"
+              >
+                {saving ? 'Adding...' : 'Add Word'}
+              </button>
+            </form>
+          </div>
         </div>
       )}
 
@@ -112,7 +252,6 @@ export default function ManageList() {
             <div className="text-center py-12 text-stone-400">
               <div className="text-4xl mb-2">👥</div>
               <p className="text-sm">No students in your class yet.</p>
-              <p className="text-sm mt-1">Add students from your <strong>Dashboard</strong>.</p>
             </div>
           ) : (
             <div className="space-y-2">

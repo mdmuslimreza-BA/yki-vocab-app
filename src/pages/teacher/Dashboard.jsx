@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
 
 export default function TeacherDashboard() {
   const { user, profile } = useAuth()
+  const navigate = useNavigate()
   const [lists, setLists]       = useState([])
   const [students, setStudents] = useState([])
   const [loading, setLoading]   = useState(true)
@@ -189,16 +190,22 @@ export default function TeacherDashboard() {
           <div className="bg-white rounded-2xl border border-orange-100 divide-y divide-orange-50">
             {students.map(s => (
               <div key={s.id} className="flex items-center gap-3 px-4 py-3">
-                <div className="w-9 h-9 rounded-xl bg-orange-100 text-orange-700 flex items-center justify-center font-bold text-sm shrink-0">
-                  {s.full_name?.[0]?.toUpperCase()}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm text-stone-900">{s.full_name}</p>
-                  <p className="text-xs text-stone-400">{s.email}</p>
-                </div>
+                <button
+                  onClick={() => navigate('/teacher/student/' + s.id)}
+                  className="flex items-center gap-3 flex-1 min-w-0 text-left hover:opacity-80 transition-opacity"
+                >
+                  <div className="w-9 h-9 rounded-xl bg-orange-100 text-orange-700 flex items-center justify-center font-bold text-sm shrink-0">
+                    {s.full_name?.[0]?.toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-sm text-stone-900">{s.full_name}</p>
+                    <p className="text-xs text-stone-400">{s.email}</p>
+                  </div>
+                  <span className="text-xs text-orange-400 font-semibold shrink-0">View →</span>
+                </button>
                 <button
                   onClick={() => removeStudent(s.id, s.full_name)}
-                  className="text-xs text-red-400 hover:text-red-600"
+                  className="text-xs text-red-400 hover:text-red-600 ml-2 shrink-0"
                 >
                   Remove
                 </button>

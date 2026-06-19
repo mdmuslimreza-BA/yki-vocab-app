@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
 import { updateStreak } from '../../lib/streak'
+import { updateMastery } from '../../lib/mastery'
 
 function shuffle(arr) { return [...arr].sort(() => Math.random() - 0.5) }
 
@@ -48,6 +49,9 @@ export default function MCQQuiz() {
     const correct = choice === q.correct
     const newScore = correct ? score + 1 : score
     const newMissed = correct ? missed : [...missed, q]
+
+    // Update per-word mastery
+    updateMastery(user.id, q.id, listId, correct)
 
     setTimeout(async () => {
       if (index + 1 >= questions.length) {
