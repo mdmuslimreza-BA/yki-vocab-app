@@ -4,22 +4,40 @@ import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
 
 const MODES = [
-  { key: 'flashcards', label: 'Flashcards', icon: 'FC', path: '/student/flashcards/', color: 'bg-orange-500 hover:bg-orange-600' },
-  { key: 'quiz',       label: 'MCQ Quiz',   icon: 'Q',  path: '/student/quiz/',       color: 'bg-green-500 hover:bg-green-600' },
-  { key: 'typing',     label: 'Typing',     icon: 'T',  path: '/student/typing/',     color: 'bg-blue-500 hover:bg-blue-600' },
-  { key: 'matching',   label: 'Matching',   icon: 'M',  path: '/student/matching/',   color: 'bg-purple-500 hover:bg-purple-600' },
+  { key: 'flashcards', label: 'Flashcards', path: '/student/flashcards/', color: 'bg-orange-500 hover:bg-orange-600' },
+  { key: 'quiz',       label: 'MCQ Quiz',   path: '/student/quiz/',       color: 'bg-green-500 hover:bg-green-600' },
+  { key: 'typing',     label: 'Typing',     path: '/student/typing/',     color: 'bg-blue-500 hover:bg-blue-600' },
+  { key: 'matching',   label: 'Matching',   path: '/student/matching/',   color: 'bg-purple-500 hover:bg-purple-600' },
 ]
+
+function computeBadges(results, streak) {
+  const badges = []
+  if (results.length >= 1)  badges.push({ icon: '🎯', label: 'First Step',   desc: 'Completed first session' })
+  if (streak >= 3)          badges.push({ icon: '🔥', label: 'On Fire',       desc: streak + '-day streak' })
+  if (streak >= 7)          badges.push({ icon: '⚡', label: 'Unstoppable',   desc: '7-day streak!' })
+  if (results.some(r => Math.round((r.score / r.total) * 100) === 100))
+                            badges.push({ icon: '💯', label: 'Perfect Score',  desc: '100% in a session' })
+  if (results.length >= 10) badges.push({ icon: '📚', label: 'Committed',     desc: '10+ sessions' })
+  if (results.length >= 25) badges.push({ icon: '🏆', label: 'Scholar',       desc: '25+ sessions' })
+  const last10 = results.slice(0, 10)
+  if (last10.length >= 5) {
+    const avg = last10.reduce((a, r) => a + (r.score / r.total) * 100, 0) / last10.length
+    if (avg >= 80) badges.push({ icon: '🌟', label: 'High Achiever', desc: 'Avg 80%+ last 10 sessions' })
+  }
+  return badges
+}
 
 export default function StudentDashboard() {
   const { user, profile } = useAuth()
   const navigate = useNavigate()
   const [lists, setLists]     = useState([])
   const [results, setResults] = useState([])
+  const [streak, setStreak]   = useState(0)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function load() {
-      const [{ data: assigned }, { data: scores }] = await Promise.all([
+      const [{ data: assigned }, { data: scores }, { data: prof }] = await Promise.all([
         supabase
           .from('assignments')
           .select('list_id, vocab_lists(id, title, vocab_words(count))')
@@ -28,10 +46,16 @@ export default function StudentDashboard() {
           .from('quiz_results')
           .select('list_id, score, total, mode, created_at')
           .eq('student_id', user.id)
-          .order('created_at', { ascending: false })
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('profiles')
+          .select('streak')
+          .eq('id', user.id)
+          .single()
       ])
       setLists((assigned ?? []).map(a => a.vocab_lists))
       setResults(scores ?? [])
+      setStreak(prof?.streak ?? 0)
       setLoading(false)
     }
     load()
@@ -47,17 +71,51 @@ export default function StudentDashboard() {
     if (!bestByList[r.list_id] || pct > bestByList[r.list_id]) bestByList[r.list_id] = pct
   })
 
-  const modeEmojis = { flashcard: '🃏', mcq: '✏️', typing: '⌨️', matching: '🔗' }
+  const modeEmojis = { flashcards: '🃏', mcq: '✏️', typing: '⌨️', matching: '🔗' }
+  const badges = computeBadges(results, streak)
 
   return (
     <div className="max-w-lg mx-auto px-4 py-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-stone-900">Hi, {firstName}! 👋</h1>
-        <p className="text-stone-400 text-sm mt-1">
-          {lists.length} list{lists.length !== 1 ? 's' : ''} assigned · Ready to practice?
-        </p>
+      {/* Header with streak */}
+      <div className="flex items-start justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-stone-900">Hi, {firstName}! 👋</h1>
+          <p className="text-stone-400 text-sm mt-1">
+            {lists.length} list{lists.length !== 1 ? 's' : ''} assigned · Ready to practice?
+          </p>
+        </div>
+        <div className="text-center bg-orange-50 border border-orange-200 rounded-2xl px-4 py-2 min-w-[72px]">
+          <p className="text-2xl font-bold text-orange-600">{streak}</p>
+          <p className="text-xs text-orange-500 font-semibold">🔥 streak</p>
+        </div>
       </div>
 
+      {/* Leaderboard button */}
+      <button
+        onClick={() => navigate('/student/leaderboard')}
+        className="w-full flex items-center justify-between bg-white border border-orange-100 rounded-2xl px-4 py-3 mb-6 shadow-sm hover:border-orange-300 transition-colors"
+      >
+        <span className="font-bold text-stone-700 text-sm">🏆 Class Leaderboard</span>
+        <span className="text-orange-500 text-sm font-semibold">View →</span>
+      </button>
+
+      {/* Badges */}
+      {badges.length > 0 && (
+        <div className="mb-6">
+          <h2 className="font-bold text-stone-500 text-xs uppercase tracking-widest mb-3">Your Badges</h2>
+          <div className="flex flex-wrap gap-2">
+            {badges.map((b, i) => (
+              <div key={i} title={b.desc}
+                className="flex items-center gap-1.5 bg-white border border-orange-100 rounded-xl px-3 py-2 shadow-sm">
+                <span className="text-lg">{b.icon}</span>
+                <span className="text-xs font-bold text-stone-700">{b.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Lists */}
       {lists.length === 0 ? (
         <div className="text-center py-16 text-stone-400">
           <div className="text-6xl mb-4">📚</div>
@@ -106,6 +164,7 @@ export default function StudentDashboard() {
         </div>
       )}
 
+      {/* Recent Activity */}
       {results.length > 0 && (
         <div className="mt-8">
           <h2 className="font-bold text-stone-500 text-xs uppercase tracking-widest mb-3">Recent Activity</h2>

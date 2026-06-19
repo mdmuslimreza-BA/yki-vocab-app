@@ -14,6 +14,7 @@ import Flashcards      from './pages/student/Flashcards'
 import MCQQuiz         from './pages/student/MCQQuiz'
 import TypingMode      from './pages/student/TypingMode'
 import MatchingGame    from './pages/student/MatchingGame'
+import Leaderboard     from './pages/student/Leaderboard'
 
 function AppRoutes() {
   const { user, profile } = useAuth()
@@ -53,6 +54,9 @@ function AppRoutes() {
         } />
         <Route path="/student/matching/:listId" element={
           <ProtectedRoute role="student"><MatchingGame /></ProtectedRoute>
+        } />
+        <Route path="/student/leaderboard" element={
+          <ProtectedRoute role="student"><Leaderboard /></ProtectedRoute>
         } />
 
         <Route path="/" element={<Navigate to={user ? home : '/login'} />} />

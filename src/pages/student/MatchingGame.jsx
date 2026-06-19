@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
+import { updateStreak } from '../../lib/streak'
 
 function shuffle(arr) { return [...arr].sort(() => Math.random() - 0.5) }
 
@@ -50,7 +51,7 @@ export default function MatchingGame() {
     setRoundNum(rNum)
   }
 
-  function handleTap(id, side) {
+  async function handleTap(id, side) {
     if (matched.has(id) || wrong) return
 
     if (!selected) {
@@ -78,10 +79,11 @@ export default function MatchingGame() {
         const nextRound = roundNum + 1
         if (nextRound >= totalRounds) {
           // All done
-          supabase.from('quiz_results').insert({
+          await supabase.from('quiz_results').insert({
             student_id: user.id, list_id: listId,
             mode: 'matching', score: score + 1, total: allWords.length
           })
+          await updateStreak(user.id)
           setTimeout(() => setDone(true), 600)
         } else {
           setTimeout(() => startRound(allWords, nextRound), 600)

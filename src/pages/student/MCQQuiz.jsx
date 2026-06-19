@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
+import { updateStreak } from '../../lib/streak'
 
 function shuffle(arr) { return [...arr].sort(() => Math.random() - 0.5) }
 
@@ -54,6 +55,7 @@ export default function MCQQuiz() {
           student_id: user.id, list_id: listId,
           mode: 'mcq', score: newScore, total: questions.length
         })
+        await updateStreak(user.id)
         setScore(newScore); setMissed(newMissed); setDone(true)
       } else {
         setScore(newScore); setMissed(newMissed)

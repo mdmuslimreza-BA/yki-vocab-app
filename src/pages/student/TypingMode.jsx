@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
+import { updateStreak } from '../../lib/streak'
 
 function shuffle(arr) { return [...arr].sort(() => Math.random() - 0.5) }
 
@@ -57,6 +58,7 @@ export default function TypingMode() {
           student_id: user.id, list_id: listId,
           mode: 'typing', score: newScore, total: words.length
         })
+        await updateStreak(user.id)
         setScore(newScore); setMissed(newMissed); setDone(true)
       } else {
         setScore(newScore); setMissed(newMissed)
@@ -71,12 +73,13 @@ export default function TypingMode() {
     const word = words[index]
     setFeedback('wrong')
     const newMissed = [...missed, word]
-    setTimeout(() => {
+    setTimeout(async () => {
       if (index + 1 >= words.length) {
-        supabase.from('quiz_results').insert({
+        await supabase.from('quiz_results').insert({
           student_id: user.id, list_id: listId,
           mode: 'typing', score, total: words.length
         })
+        await updateStreak(user.id)
         setMissed(newMissed); setDone(true)
       } else {
         setMissed(newMissed)
