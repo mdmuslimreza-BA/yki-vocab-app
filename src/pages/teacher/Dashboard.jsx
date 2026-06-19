@@ -52,31 +52,31 @@ export default function TeacherDashboard() {
       .single()
 
     if (error || !found) {
-      setAddMsg('❌ No student account found with that email.')
+      setAddMsg('No student account found with that email.')
       setAdding(false); return
     }
     if (found.teacher_id === user.id) {
-      setAddMsg('✅ Already linked to you.'); setAdding(false); return
+      setAddMsg('Already linked to you.'); setAdding(false); return
     }
     if (found.teacher_id && found.teacher_id !== user.id) {
-      setAddMsg('❌ Student is linked to another teacher.'); setAdding(false); return
+      setAddMsg('Student is linked to another teacher.'); setAdding(false); return
     }
 
     const { error: updateErr } = await supabase
       .from('profiles').update({ teacher_id: user.id }).eq('id', found.id)
 
     if (updateErr) {
-      setAddMsg('❌ Could not link student. Try again.')
+      setAddMsg('Could not link student. Try again.')
     } else {
       setStudents(s => [...s, { id: found.id, full_name: found.full_name, email }])
-      setAddMsg(`✅ ${found.full_name} added!`)
+      setAddMsg(found.full_name + ' added!')
       setAddEmail('')
     }
     setAdding(false)
   }
 
   async function removeStudent(studentId, name) {
-    if (!confirm(`Remove ${name} from your class?`)) return
+    if (!confirm('Remove ' + name + ' from your class?')) return
     await supabase.from('profiles').update({ teacher_id: null }).eq('id', studentId)
     setStudents(s => s.filter(x => x.id !== studentId))
   }
@@ -116,7 +116,7 @@ export default function TeacherDashboard() {
               <div key={list.id} className="bg-white rounded-2xl shadow-sm border border-orange-100 p-4 flex items-center gap-3">
                 <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center text-lg shrink-0">📖</div>
                 <div className="flex-1 min-w-0">
-                  <Link to={`/teacher/list/${list.id}`} className="font-semibold text-stone-900 hover:text-orange-600 truncate block">
+                  <Link to={'/teacher/list/' + list.id} className="font-semibold text-stone-900 hover:text-orange-600 truncate block">
                     {list.title}
                   </Link>
                   <p className="text-sm text-stone-400 mt-0.5">
@@ -125,5 +125,96 @@ export default function TeacherDashboard() {
                 </div>
                 <div className="flex gap-2 shrink-0">
                   <Link
-                    to={`/teacher/list/${list.id}`}
-                    className="text-xs bg-o
+                    to={'/teacher/list/' + list.id}
+                    className="text-xs bg-orange-50 text-orange-700 px-3 py-1.5 rounded-lg hover:bg-orange-100 font-semibold"
+                  >
+                    Manage
+                  </Link>
+                  <button
+                    onClick={() => deleteList(list.id)}
+                    className="text-xs bg-red-50 text-red-500 px-3 py-1.5 rounded-lg hover:bg-red-100 font-semibold"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="font-bold text-stone-500 text-xs uppercase tracking-widest">
+            Students ({students.length})
+          </h2>
+          <button
+            onClick={() => { setShowAdd(a => !a); setAddMsg('') }}
+            className="text-xs bg-green-500 text-white px-3 py-1.5 rounded-lg hover:bg-green-600 font-semibold"
+          >
+            + Add Student
+          </button>
+        </div>
+
+        {showAdd && (
+          <form onSubmit={addStudent} className="bg-orange-50 border border-orange-200 rounded-2xl p-4 mb-3">
+            <p className="text-sm font-semibold text-stone-700 mb-2">Add student by email</p>
+            <div className="flex gap-2">
+              <input
+                type="email"
+                required
+                value={addEmail}
+                onChange={e => setAddEmail(e.target.value)}
+                placeholder="student@email.com"
+                className="flex-1 border border-orange-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white"
+              />
+              <button
+                type="submit"
+                disabled={adding}
+                className="bg-orange-500 text-white text-sm px-4 py-2 rounded-xl hover:bg-orange-600 disabled:opacity-60 font-semibold"
+              >
+                {adding ? '...' : 'Add'}
+              </button>
+            </div>
+            {addMsg && <p className="text-sm mt-2 text-stone-600">{addMsg}</p>}
+          </form>
+        )}
+
+        {students.length === 0 ? (
+          <div className="text-center py-8 text-stone-400 bg-white rounded-2xl border border-orange-100">
+            <div className="text-3xl mb-2">👥</div>
+            <p className="text-sm">No students yet — click + Add Student</p>
+          </div>
+        ) : (
+          <div className="bg-white rounded-2xl border border-orange-100 divide-y divide-orange-50">
+            {students.map(s => (
+              <div key={s.id} className="flex items-center gap-3 px-4 py-3">
+                <div className="w-9 h-9 rounded-xl bg-orange-100 text-orange-700 flex items-center justify-center font-bold text-sm shrink-0">
+                  {s.full_name?.[0]?.toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-sm text-stone-900">{s.full_name}</p>
+                  <p className="text-xs text-stone-400">{s.email}</p>
+                </div>
+                <button
+                  onClick={() => removeStudent(s.id, s.full_name)}
+                  className="text-xs text-red-400 hover:text-red-600"
+                >
+                  Remove
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function Spinner() {
+  return (
+    <div className="flex justify-center items-center min-h-[60vh]">
+      <div className="w-8 h-8 border-4 border-orange-400 border-t-transparent rounded-full animate-spin" />
+    </div>
+  )
+}

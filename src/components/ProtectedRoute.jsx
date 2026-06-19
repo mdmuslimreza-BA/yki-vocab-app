@@ -15,7 +15,6 @@ export default function ProtectedRoute({ children, role }) {
 
   if (!user) return <Navigate to="/login" replace />
 
-  // Profile still loading (e.g. slow DB) — wait instead of redirecting
   if (user && !profile) return (
     <div className="flex items-center justify-center min-h-screen bg-orange-50">
       <div className="text-center">

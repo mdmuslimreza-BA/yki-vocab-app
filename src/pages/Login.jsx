@@ -31,7 +31,7 @@ export default function Login() {
             🎯
           </div>
           <h1 className="text-2xl font-bold text-stone-900">YKI Ready</h1>
-          <p className="text-stone-400 text-sm mt-1">Finnish–English Vocabulary Practice</p>
+          <p className="text-stone-400 text-sm mt-1">Finnish-English Vocabulary Practice</p>
         </div>
 
         {error && (
@@ -68,8 +68,17 @@ export default function Login() {
             disabled={loading}
             className="w-full bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white font-bold py-3 rounded-xl transition-all disabled:opacity-60 shadow-md shadow-orange-200 mt-2"
           >
-            {loading ? 'Signing in...' : 'Sign In →'}
+            {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
 
-     
+        <p className="text-center text-sm text-stone-400 mt-6">
+          No account?{' '}
+          <Link to="/register" className="text-orange-600 font-bold hover:underline">
+            Register here
+          </Link>
+        </p>
+      </div>
+    </div>
+  )
+}

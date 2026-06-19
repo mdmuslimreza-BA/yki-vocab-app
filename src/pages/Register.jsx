@@ -44,9 +44,8 @@ export default function Register() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Role selector */}
           <div className="grid grid-cols-2 gap-2">
-            {[['teacher', '👩‍🏫 Teacher'], ['student', '🎓 Student']].map(([r, label]) => (
+            {[['teacher', 'Teacher'], ['student', 'Student']].map(([r, label]) => (
               <button
                 key={r}
                 type="button"
@@ -70,7 +69,7 @@ export default function Register() {
               value={form.fullName}
               onChange={e => setForm(f => ({ ...f, fullName: e.target.value }))}
               className="w-full border-2 border-orange-100 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-orange-400 bg-orange-50"
-              placeholder="Anna Mäkinen"
+              placeholder="Anna Makinen"
             />
           </div>
 
@@ -101,7 +100,7 @@ export default function Register() {
           {form.role === 'student' && (
             <div>
               <label className="block text-sm font-semibold text-stone-600 mb-1">
-                Teacher's Email <span className="text-stone-400 font-normal">(optional)</span>
+                Teacher Email <span className="text-stone-400 font-normal">(optional)</span>
               </label>
               <input
                 type="email"
@@ -119,8 +118,15 @@ export default function Register() {
             disabled={loading}
             className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 rounded-xl transition-all disabled:opacity-60 shadow-md shadow-green-200 mt-1"
           >
-            {loading ? 'Creating account...' : 'Create Account →'}
+            {loading ? 'Creating account...' : 'Create Account'}
           </button>
         </form>
 
-        <p className="text-c
+        <p className="text-center text-sm text-stone-400 mt-5">
+          Already have an account?{' '}
+          <Link to="/login" className="text-orange-600 font-bold hover:underline">Sign in</Link>
+        </p>
+      </div>
+    </div>
+  )
+}
