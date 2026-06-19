@@ -32,7 +32,7 @@ function AppRoutes() {
         <Route path="/teacher/upload" element={
           <ProtectedRoute role="teacher"><UploadVocab /></ProtectedRoute>
         } />
-        <Route path="/teacher/list/:id" element={
+        <Route path="/teacher/list/:listId" element={
           <ProtectedRoute role="teacher"><ManageList /></ProtectedRoute>
         } />
         <Route path="/teacher/progress" element={
